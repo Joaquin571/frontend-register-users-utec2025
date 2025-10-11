@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Registro de Usuarios</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="container">
+    <h1>Registro de Usuarios</h1>
+    <p class="subtitle">Frontend simple que consume API REST (Create + Read)</p>
+  </header>
+
+  <main class="container grid">
+    <!-- Formulario de alta -->
+    <section class="card">
+      <h2>Crear usuario</h2>
+      <form id="user-form" novalidate>
+        <div class="field">
+          <label for="name">Nombre</label>
+          <input id="name" name="name" type="text" placeholder="Ej: Ana Pérez" required minlength="2" />
+          <small class="error" data-for="name"></small>
+        </div>
+
+        <div class="field">
+          <label for="email">Email</label>
+          <input id="email" name="email" type="email" placeholder="ana@ejemplo.com" required />
+          <small class="error" data-for="email"></small>
+        </div>
+
+        <div class="field">
+          <label for="phone">Teléfono</label>
+          <input
+            id="phone" name="phone" type="tel"
+            placeholder="+598 9xxxxxxx"
+            pattern="^[+]?[\d \-()]{7,20}$"
+            required
+          />
+          <small class="error" data-for="phone"></small>
+        </div>
+
+        <button id="submit-btn" type="submit">Crear usuario</button>
+        <div id="form-status" role="status" aria-live="polite" class="status"></div>
+      </form>
+    </section>
+
+    <!-- Listado -->
+    <section class="card">
+      <div class="list-header">
+        <h2>Usuarios registrados</h2>
+        <button id="reload-btn" class="ghost">Recargar</button>
+      </div>
+
+      <div id="list-empty" class="empty hidden">No hay usuarios cargados aún.</div>
+
+      <div class="table-wrapper">
+        <table id="users-table" class="table">
+          <thead>
+            <tr>
+              <th>Nombre</th>
+              <th>Email</th>
+              <th>Teléfono</th>
+              <th>Creado</th>
+            </tr>
+          </thead>
+          <tbody id="users-tbody">
+            <!-- filas dinámicas -->
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <footer class="container footer">
+    <small>Este frontend expone sólo UI. Las notificaciones por email las envía el backend al crear el usuario.</small>
+  </footer>
+
+  <script>
+    // === CONFIGURACIÓN ===
+    // Cambiá esta constante por la URL pública de tu backend (API Gateway/ALB/Ingress).
+    const API_BASE = "http://localhost:8000"; // p.ej.: "https://api.tu-dominio.com"
+    const ENDPOINT_USERS = `${API_BASE}/users`; // GET lista, POST crea (JSON)
+
+    // === HELPERS UI ===
+    const $ = (sel, root=document) => root.querySelector(sel);
+    const $$ = (sel, root=document) => Array.from(root.querySelectorAll(sel));
+
+    function setBusy(button, busy) {
+      if (!button) return;
+      button.disabled = busy;
+      button.dataset.busy = busy ? "1" : "0";
+    }
+
+    function showError(input, message) {
+      const small = document.querySelector(`.error[data-for="${input.id}"]`);
+      if (small) small.textContent = message || "";
+      input.setAttribute("aria-invalid", message ? "true" : "false");
+    }
+
+    function clearErrors(form) {
+      $$(".error", form).forEach(s => s.textContent = "");
+      $$("input", form).forEach(i => i.removeAttribute("aria-invalid"));
+      const status = $("#form-status");
+      if (status) status.textContent = "";
+    }
+
+    function fmtDate(iso) {
+      if (!iso) return "-";
+      try {
+        const d = new Date(iso);
+        return d.toLocaleString();
+      } catch {
+        return iso;
+      }
+    }
+
+    // === API ===
+    async function apiListUsers() {
+      const res = await fetch(ENDPOINT_USERS, { headers: { "Accept": "application/json" }});
+      if (!res.ok) throw new Error(`Error al listar usuarios: ${res.status}`);
+      return res.json();
+    }
+
+    async function apiCreateUser(payload) {
+      const res = await fetch(ENDPOINT_USERS, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Accept": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) {
+        const msg = await res.text().catch(()=> "");
+        throw new Error(msg || `Error al crear usuario: ${res.status}`);
+      }
+      return res.json();
+    }
+
+    // === RENDER ===
+    function renderUsers(list) {
+      const tbody = $("#users-tbody");
+      const empty = $("#list-empty");
+      tbody.innerHTML = "";
+
+      if (!Array.isArray(list) || list.length === 0) {
+        empty.classList.remove("hidden");
+        return;
+      }
+      empty.classList.add("hidden");
+
+      list.forEach(u => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${u.name ?? "-"}</td>
+          <td>${u.email ?? "-"}</td>
+          <td>${u.phone ?? "-"}</td>
+          <td>${fmtDate(u.created_at)}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    async function reloadUsers() {
+      const btn = $("#reload-btn");
+      setBusy(btn, true);
+      try {
+        const data = await apiListUsers();
+        // Se espera que la API devuelva un array de usuarios; adaptar si la clave es data.results, etc.
+        renderUsers(Array.isArray(data) ? data : (data.results || []));
+      } catch (e) {
+        console.error(e);
+        renderUsers([]);
+        alert("No se pudo cargar la lista de usuarios. Ver consola.");
+      } finally {
+        setBusy(btn, false);
+      }
+    }
+
+    // === FORM ===
+    function validateForm(form) {
+      let ok = true;
+      const name = $("#name");
+      const email = $("#email");
+      const phone = $("#phone");
+
+      clearErrors(form);
+
+      if (!name.value.trim() || name.value.trim().length < 2) {
+        showError(name, "Ingresá un nombre válido (mínimo 2 caracteres).");
+        ok = false;
+      }
+      if (!email.validity.valid) {
+        showError(email, "Ingresá un email válido.");
+        ok = false;
+      }
+      if (!phone.validity.valid) {
+        showError(phone, "Ingresá un teléfono válido.");
+        ok = false;
+      }
+      return ok;
+    }
+
+    async function onSubmit(e) {
+      e.preventDefault();
+      const form = e.currentTarget;
+      const btn = $("#submit-btn");
+      if (!validateForm(form)) return;
+
+      const payload = {
+        name: $("#name").value.trim(),
+        email: $("#email").value.trim(),
+        phone: $("#phone").value.trim(),
+      };
+
+      setBusy(btn, true);
+      $("#form-status").textContent = "Creando usuario...";
+      try {
+        await apiCreateUser(payload);
+        $("#form-status").textContent = "✅ Usuario creado correctamente.";
+        form.reset();
+        await reloadUsers(); // refrescar listado
+      } catch (err) {
+        console.error(err);
+        $("#form-status").textContent = "❌ No se pudo crear el usuario. Revisá la API/console.";
+      } finally {
+        setBusy(btn, false);
+      }
+    }
+
+    // === INIT ===
+    window.addEventListener("DOMContentLoaded", () => {
+      $("#user-form").addEventListener("submit", onSubmit);
+      $("#reload-btn").addEventListener("click", reloadUsers);
+      reloadUsers();
+    });
+  </script>
+</body>
+</html>
