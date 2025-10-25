@@ -9,7 +9,6 @@
 <body>
   <header class="container">
     <h1>Registro de Usuarios</h1>
-    <p class="subtitle">Frontend simple que consume API REST (Create + Read)</p>
   </header>
 
   <main class="container grid">
@@ -31,12 +30,10 @@
 
         <div class="field">
           <label for="phone">Teléfono</label>
-          <input
-            id="phone" name="phone" type="tel"
-            placeholder="+598 9xxxxxxx"
-            pattern="^[+]?[\d \-()]{7,20}$"
-            required
-          />
+          <input id="phone" name="phone" type="tel"
+          pattern="^[0-9()+\- ]{7,20}$"
+          placeholder="+598 9xxxxxxx" required />
+
           <small class="error" data-for="phone"></small>
         </div>
 
@@ -73,16 +70,13 @@
   </main>
 
   <footer class="container footer">
-    <small>Este frontend expone sólo UI. Las notificaciones por email las envía el backend al crear el usuario.</small>
+    <small>Proyecto Final Administracion de Infraestructuras - UTEC 2025</small>
   </footer>
 
   <script>
-    // === CONFIGURACIÓN ===
-    // Cambiá esta constante por la URL pública de tu backend (API Gateway/ALB/Ingress).
-    const API_BASE = "http://localhost:8000"; // p.ej.: "https://api.tu-dominio.com"
-    const ENDPOINT_USERS = `${API_BASE}/users`; // GET lista, POST crea (JSON)
+    const API_BASE = "http://127.0.0.1:8000"; 
+    const ENDPOINT_USERS = `${API_BASE}/users`; 
 
-    // === HELPERS UI ===
     const $ = (sel, root=document) => root.querySelector(sel);
     const $$ = (sel, root=document) => Array.from(root.querySelectorAll(sel));
 
@@ -115,7 +109,6 @@
       }
     }
 
-    // === API ===
     async function apiListUsers() {
       const res = await fetch(ENDPOINT_USERS, { headers: { "Accept": "application/json" }});
       if (!res.ok) throw new Error(`Error al listar usuarios: ${res.status}`);
@@ -134,8 +127,6 @@
       }
       return res.json();
     }
-
-    // === RENDER ===
     function renderUsers(list) {
       const tbody = $("#users-tbody");
       const empty = $("#list-empty");
@@ -164,7 +155,6 @@
       setBusy(btn, true);
       try {
         const data = await apiListUsers();
-        // Se espera que la API devuelva un array de usuarios; adaptar si la clave es data.results, etc.
         renderUsers(Array.isArray(data) ? data : (data.results || []));
       } catch (e) {
         console.error(e);
@@ -175,7 +165,6 @@
       }
     }
 
-    // === FORM ===
     function validateForm(form) {
       let ok = true;
       const name = $("#name");
@@ -217,7 +206,7 @@
         await apiCreateUser(payload);
         $("#form-status").textContent = "✅ Usuario creado correctamente.";
         form.reset();
-        await reloadUsers(); // refrescar listado
+        await reloadUsers();
       } catch (err) {
         console.error(err);
         $("#form-status").textContent = "❌ No se pudo crear el usuario. Revisá la API/console.";
@@ -225,8 +214,6 @@
         setBusy(btn, false);
       }
     }
-
-    // === INIT ===
     window.addEventListener("DOMContentLoaded", () => {
       $("#user-form").addEventListener("submit", onSubmit);
       $("#reload-btn").addEventListener("click", reloadUsers);
