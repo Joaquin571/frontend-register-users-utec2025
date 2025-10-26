@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Registro de Usuarios</title>
   <link rel="stylesheet" href="styles.css" />
+  <script src="config.js"></script>
 </head>
 <body>
   <header class="container">
@@ -74,8 +75,10 @@
   </footer>
 
   <script>
-    const API_BASE = "http://127.0.0.1:8000"; 
-    const ENDPOINT_USERS = `${API_BASE}/users`; 
+    const API_BASE = "http://127.0.0.1:8000";
+    //const API_BASE = window.APP_CONFIG?.API_BASE || "http://127.0.0.1:8000";
+    const ENDPOINT_USERS = `${API_BASE}/users`;
+
 
     const $ = (sel, root=document) => root.querySelector(sel);
     const $$ = (sel, root=document) => Array.from(root.querySelectorAll(sel));
