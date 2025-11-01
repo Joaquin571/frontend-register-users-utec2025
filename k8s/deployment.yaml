@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend
+  namespace: obligatorio
+  labels:
+    app: frontend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: frontend
+  template:
+    metadata:
+      labels:
+        app: frontend
+    spec:
+      imagePullSecrets:
+        - name: ecr-creds
+      volumes:
+        - name: nginx-conf
+          configMap:
+            name: frontend-nginx
+            items:
+              - key: nginx.conf
+                path: nginx.conf
+      containers:
+        - name: frontend
+          image: 439590609369.dkr.ecr.us-east-1.amazonaws.com/obligatorio-frontend:latest
+          ports:
+            - containerPort: 3000
+          volumeMounts:
+            - name: nginx-conf
+              mountPath: /etc/nginx/nginx.conf
+              subPath: nginx.conf
+          env:
+            - name: VITE_BACKEND_URL
+              value: "http://users-api-service.obligatorio.svc.cluster.local:8000"
+            - name: VITE_NOTIFICATION_URL
+              value: "http://notification-service.obligatorio.svc.cluster.local:8081"
