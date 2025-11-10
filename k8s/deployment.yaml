@@ -24,17 +24,37 @@ spec:
             items:
               - key: nginx.conf
                 path: nginx.conf
+        - name: tls-certs
+          secret:
+            secretName: frontend-tls
       containers:
         - name: frontend
-          image: 439590609369.dkr.ecr.us-east-1.amazonaws.com/obligatorio-frontend:latest
+          image: 825501491126.dkr.ecr.us-east-1.amazonaws.com/frontend-service
           ports:
             - containerPort: 3000
+            - containerPort: 80
+            - containerPort: 3443
           volumeMounts:
             - name: nginx-conf
               mountPath: /etc/nginx/nginx.conf
               subPath: nginx.conf
+            - name: tls-certs
+              mountPath: /etc/nginx/tls
+              readOnly: true
           env:
             - name: VITE_BACKEND_URL
               value: "http://users-api-service.obligatorio.svc.cluster.local:8000"
             - name: VITE_NOTIFICATION_URL
               value: "http://notification-service.obligatorio.svc.cluster.local:8081"
+          envFrom:
+            - configMapRef:
+                name: frontend-config
+          resources:
+            requests:
+              cpu: "50m"
+              memory: "64Mi"
+            limits:
+              cpu: "200m"
+              memory: "128Mi"
+
+

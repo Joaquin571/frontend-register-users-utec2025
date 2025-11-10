@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: frontend-config
+  namespace: obligatorio
+data:
+  API_BASE_URL: "https://tpgod3irl3.execute-api.us-east-1.amazonaws.com"

@@ -4,6 +4,7 @@ metadata:
   name: frontend-nginx
   namespace: obligatorio
 data:
+  API_BASE_URL: "https://tpgod3irl3.execute-api.us-east-1.amazonaws.com"
   nginx.conf: |
     user  nginx;
     worker_processes  auto;
@@ -30,7 +31,18 @@ data:
 
       server {
         listen 3000;
-        server_name _;
+        server_name app.joaquingonzalezutec.abrdns.com;
+
+        return 301 https://$host$request_uri;
+      }
+
+      # Servidor HTTPS real
+      server {
+        listen 3443 ssl;
+        server_name app.joaquingonzalezutec.abrdns.com;
+
+        ssl_certificate     /etc/nginx/tls/tls.crt;
+        ssl_certificate_key /etc/nginx/tls/tls.key;
 
         root /usr/share/nginx/html;
         index index.html;
