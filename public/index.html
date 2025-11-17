@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Registro de Usuarios</title>
   <link rel="stylesheet" href="styles.css" />
-  <script src="config.js"></script>
+
 </head>
 <body>
   <header class="container">
@@ -31,9 +31,10 @@
 
         <div class="field">
           <label for="phone">Teléfono</label>
-          <input id="phone" name="phone" type="tel"
-          pattern="^[0-9()+\- ]{7,20}$"
-          placeholder="+598 9xxxxxxx" required />
+          <input
+          type="text"
+          name="phone"
+          pattern="^[0-9()\+\.\s\-]{7,20}$"/>
 
           <small class="error" data-for="phone"></small>
         </div>
@@ -75,9 +76,10 @@
   </footer>
 
   <script>
-    const API_BASE = "https://tpgod3irl3.execute-api.us-east-1.amazonaws.com";
-    //const API_BASE = window.APP_CONFIG?.API_BASE || "http://127.0.0.1:8000";
+    //const API_BASE = "https://tpgod3irl3.execute-api.us-east-1.amazonaws.com";
+    const API_BASE = "/api";
     const ENDPOINT_USERS = `${API_BASE}/users/`;
+
 
 
     const $ = (sel, root=document) => root.querySelector(sel);
